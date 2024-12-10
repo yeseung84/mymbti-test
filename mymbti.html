@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학습 성향 분석 시스템</title>
+    <style>
+        :root {
+            --primary-color: #2c5282;
+            --secondary-color: #4c51bf;
+            --accent-color: #667eea;
+            --background-color: #f7fafc;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --success-color: #48bb78;
+            --error-color: #e53e3e;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--background-color) 0%, #e9f2ff 100%);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 15px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .stage {
+            display: none;
+            margin: 2rem 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease-out;
+        }
+
+        .stage.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .intro {
+            background: rgba(66, 153, 225, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .intro ul {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+
+        .intro li {
+            margin-bottom: 0.8rem;
+            position: relative;
+        }
+
+        .intro li::before {
+            content: "•";
+            color: var(--primary-color);
+            position: absolute;
+            left: -1.2rem;
+        }
+
+        .question-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .question-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .question-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .question-text {
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .option {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem;
+            background: rgba(66, 153, 225, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .option:hover {
+            background: rgba(66, 153, 225, 0.1);
+        }
+
+        .option input[type="radio"] {
+            margin-right: 1rem;
+            margin-top: 0.3rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #edf2f7;
+            border-radius: 4px;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #edf2f7;
+            color: var(--text-primary);
+        }
+
+        button:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #edf2f7;
+        }
+
+        .result-section {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(66, 153, 225, 0.05);
+            border-radius: 10px;
+        }
+
+        .dimension-result {
+            margin-bottom: 2rem;
+        }
+
+        .result-bar-container {
+            margin: 1rem 0;
+        }
+
+        .result-bar {
+            height: 24px;
+            background: #edf2f7;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .result-fill {
+            height: 100%;
+            background: var(--accent-color);
+            transition: width 0.5s ease;
+        }
+
+        .result-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1.5rem;
+            }
+
+            .question-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>학습 성향 진단 시스템</h1>
+            <p>자녀의 MBTI 기반 학습 스타일을 분석합니다</p>
+        </div>
+
+        <div id="stage-intro" class="stage active">
+            <div class="intro">
+                <ul>
+                    <li>각 문항마다 A와 B 중 자녀의 평소 모습에 더 가까운 것을 선택해보세요.</li>
+                    <li>모든 문항이 자녀의 특성을 100% 반영하지 않을 수도 있지만, 대체로 어떤 경향이 강한지 파악하는 데 도움이 됩니다.</li>
+                    <li>결과를 통해 자녀의 학습 관련 성향(E/I, S/N, T/F, J/P)을 가늠해볼 수 있습니다.</li>
+                </ul>
+            </div>
+            <button class="btn-primary" onclick="startTest()">진단 시작하기</button>
+        </div>
+
+        <div id="stage-test" class="stage">
+            <div class="progress-bar">
+                <div class="progress" style="width: 0%"></div>
+            </div>
+            <div id="question-container"></div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevQuestion()" disabled>이전</button>
+                <button class="btn-primary" onclick="nextQuestion()">다음</button>
+            </div>
+        </div>
+
+        <div id="stage-results" class="stage">
+            <div id="results-container"></div>
+            <button class="btn-primary" onclick="restartTest()">다시 진단하기</button>
+        </div>
+    </div>
+
+    <script>
+    let currentSectionIndex = 0; // E/I(0), S/N(1), T/F(2), J/P(3)
+    let currentQuestionIndex = 0; 
+    let answers = {
+        "E/I": [],
+        "S/N": [],
+        "T/F": [],
+        "J/P": []
+    };
+
+    const mbtiDescriptions = {
+        "ISTJ": { 특징: "계획적, 꼼꼼, 안정적", 학습키워드: "체계적 접근, 논리적 이해, 세부 점검", 전략: "목표→단계별 실천, 계획 충실 이행, 오류 최소화" },
+        "ISFJ": { 특징: "신중, 성실, 조용한 헌신", 학습키워드: "반복 학습, 실용 예시 선호, 차분한 환경", 전략: "안심할 수 있는 지원, 인정·격려, 작은 목표 달성" },
+        "INFJ": { 특징: "통찰력, 깊은 이해, 이상 추구", 학습키워드: "의미 파악, 개념적 연결, 구조적 사고", 전략: "개념 흐름 이해, 의미있는 목표, 여유 있는 계획" },
+        "INTJ": { 특징: "논리적, 분석적, 독립적", 학습키워드: "원리 파악, 전략적 계획, 체계적인 탐구", 전략: "전체 구조 이해 후 세부적용, 지속적 점검, 유연성 확보" },
+        "ISTP": { 특징: "실용적, 논리적, 탐구 지향", 학습키워드: "실험·시도, 바로 적용, 효율적 문제해결", 전략: "직접 해보기, 예제풀이 집중, 최소한의 지침 후 자율성 부여" },
+        "ISFP": { 특징: "차분, 감성적, 섬세한 관찰자", 학습키워드: "구체적 사례, 온화한 격려, 흥미있는 부분 몰입", 전략: "소규모 목표, 시각 자료 활용, 부드러운 피드백" },
+        "INFP": { 특징: "의미 추구, 창의적, 깊은 내적 사고", 학습키워드: "개념적 상징 이해, 유연한 접근, 감성적 동기", 전략: "의미 중심 학습, 자유로운 요약·표현, 완벽주의 부담 완화" },
+        "INTP": { 특징: "이론적 탐구, 논리 중시, 독립성", 학습키워드: "원리 분석, 추상 개념 파고들기, 자유로운 탐색", 전략: "개념→문제 적용, 마감 목표 설정, 설명 연습 통해 명료화" },
+        "ESTP": { 특징: "즉흥적, 실용적, 문제 해결 능력", 학습키워드: "실전 적용, 다양한 방식 시도, 효율성 추구", 전략: "단기 목표 관리, 핵심 개념 체크리스트, 토론·퀴즈 활용" },
+        "ESFP": { 특징: "활기찬, 사교적, 감정 공감", 학습키워드: "협력 학습, 재미 요소, 경험 기반 이해", 전략: "짧은 학습+휴식 반복, 칭찬·격려 풍부, 게임화된 학습" },
+        "ENFP": { 특징: "창의적, 열정적, 다면적 관심", 학습키워드: "아이디어 자유 탐색, 스토리텔링, 동기부여 강조", 전략: "흥미 따른 유연한 계획, 개념 요약 후 확장, 부드러운 피드백" },
+        "ENTP": { 특징: "혁신적, 논쟁적, 아이디어 풍부", 학습키워드: "토론식 학습, 다양한 풀이법, 창의적 문제접근", 전략: "브레인스토밍 후 선택과 집중, 논리+공감 소통, 핵심 개념 체크" },
+        "ESTJ": { 특징: "체계적, 실용적, 목표 지향", 학습키워드: "계획 수립, 절차적 접근, 논리적 개선", 전략: "명확한 일정 관리, 성과 점검, 효율성 강조한 피드백" },
+        "ESFJ": { 특징: "협력적, 현실적, 배려심", 학습키워드: "실용 예시, 안정된 계획, 칭찬과 인정", 전략: "구체적 목표+칭찬, 실생활 연계, 온화한 소통" },
+        "ENFJ": { 특징: "사교적, 의미 중심, 격려하는 리더", 학습키워드: "협동학습, 큰 그림 이해, 감정적 동기화", 전략: "아이디어 공유, 칭찬·공감, 체계적 목표+의미 부여" },
+        "ENTJ": { 특징: "논리적 리더십, 전략적 사고, 조직적", 학습키워드: "목표 지향, 효율적 전략, 논리적 구조화", 전략: "체계적 플랜 수립, 단계별 진행 확인, 변화에 대한 유연성 확보" }
+    };
+
+    const testData = {
+        "E/I": [
+            {
+                question: "새로운 학습 환경(예: 방과 후 특별 수업 첫날)",
+                options: {
+                    A: "처음 보는 친구들에게 먼저 다가가 \"같이 공부할래?\"하며 쉽게 어울린다.",
+                    B: "낯선 분위기에서 바로 친해지기보다는 주변을 먼저 살피고 천천히 적응한다."
+                }
+            },
+            {
+                question: "스터디 그룹 활동(모둠 토론 수업)",
+                options: {
+                    A: "토론 시간에 적극적으로 의견을 내며 대화를 이끌고, 친구들과 아이디어를 주고받는다.",
+                    B: "다른 친구들의 의견을 조용히 듣다가 자신의 차례가 왔을 때 차분히 말하거나, 주어진 역할에 집중한다."
+                }
+            },
+            {
+                question: "학습 도중 막히는 문제를 만났을 때",
+                options: {
+                    A: "\"이 부분 잘 모르겠는데, 선생님(또는 친구)에게 바로 물어봐야겠다!\"며 즉각적으로 도움을 청한다.",
+                    B: "먼저 스스로 생각하고 해답을 찾아보며, 한참 고민한 뒤에야 주변에 도움을 요청한다."
+                }
+            },
+            {
+                question: "학습 분위기 선호",
+                options: {
+                    A: "여러 명과 함께 공부하면서 서로 묻고 답하며 활기찬 분위기를 선호한다.",
+                    B: "조용히 혼자 집중할 수 있는 개인적 학습 공간을 더 좋아한다."
+                }
+            },
+            {
+                question: "문제 해결 과정에서의 상호작용",
+                options: {
+                    A: "친구들과 풀이 과정을 공유하고, 서로 아이디어를 교환하며 문제를 해결한다.",
+                    B: "자신의 방식으로 문제를 분석하고 혼자 해결책을 정리하는 것을 선호한다."
+                }
+            },
+            {
+                question: "수업 중 질문 태도",
+                options: {
+                    A: "궁금한 점이 생기면 손을 들고 바로 질문하거나, 친구와 대화를 나누며 해결한다.",
+                    B: "질문하기 전, 스스로 필기한 내용을 검토하고 조용히 생각한 후 필요하면 나중에 묻는다."
+                }
+            },
+            {
+                question: "프로젝트 활동 중 역할",
+                options: {
+                    A: "다른 학생들을 이끌고 전체 방향을 잡으며 적극적으로 팀원을 독려한다.",
+                    B: "맡은 역할에 몰두하며 묵묵히 자신의 부분을 완성하는데 집중한다."
+                }
+            }
+        ],
+        // 이하 S/N, T/F, J/P 문항들도 기존과 동일하게 포함
+        "S/N": [
+            {
+                question: "새로운 과제(예: 독서 감상문 쓰기)를 받았을 때",
+                options: {
+                    A: "지시사항과 분량, 형식을 꼼꼼히 확인하고, 책의 구체적 장면과 인물 묘사에 집중한다.",
+                    B: "책의 전체적인 흐름과 주제를 먼저 파악하고, 큰 개념에서 출발해 글을 풀어간다."
+                }
+            },
+            // 나머지 6문항도 이전과 동일
+            {
+                question: "새로운 개념을 배울 때(예: 과학 수업의 새로운 개념)",
+                options: {
+                    A: "실생활 예시, 사진, 실험 결과 같은 구체적 자료를 통해 이해하려고 한다.",
+                    B: "개념 간의 연결고리나 원리를 떠올리며, 전체 틀 속에서 의미를 파악한다."
+                }
+            },
+            {
+                question: "자료 정리 방식(시험 대비 복습 때)",
+                options: {
+                    A: "표, 그래프, 그림 등 시각적으로 명확한 자료를 활용해 정리한다.",
+                    B: "핵심 키워드나 개념맵을 만들어 추상적인 개념 연결을 통해 이해한다."
+                }
+            },
+            {
+                question: "문제 풀이 접근법(수학 응용문제)",
+                options: {
+                    A: "교과서나 선생님이 알려준 정석적인 풀이법을 차근차근 따라간다.",
+                    B: "다른 풀이법을 떠올리거나 직접 새로운 방법을 시도해보며 해결한다."
+                }
+            },
+            {
+                question: "결과 확인(평가 성적표를 받았을 때)",
+                options: {
+                    A: "점수, 틀린 문제 수, 정확한 수치 등을 보며 성취도를 판단한다.",
+                    B: "이번 성적이 전체적인 학습 흐름이나 이해도 향상에 어떤 의미가 있는지 생각한다."
+                }
+            },
+            {
+                question: "복습할 때(예: 국어 지문 복습)",
+                options: {
+                    A: "문제를 반복해서 풀고 외워야 할 내용을 구체적으로 숙지한다.",
+                    B: "배운 내용을 요약하거나 자기만의 방식으로 재해석하며 큰 흐름을 잡는다."
+                }
+            },
+            {
+                question: "학습 성과 점검(학기말 자기 평가)",
+                options: {
+                    A: "\"목표한 점수를 달성했나?\" \"어느 부분에서 몇 개를 틀렸나?\"와 같이 구체적 성과 기준을 본다.",
+                    B: "\"이번에 전체적으로 어떤 능력이 성장했나?\" \"어떤 사고력이 확장되었나?\" 등 큰 그림에서 성장을 평가한다."
+                }
+            }
+        ],
+        "T/F": [
+            // 기존 문항 그대로 삽입
+            {
+                question: "학습 도중 실수(오답을 발견했을 때)",
+                options: {
+                    A: "\"어디서 논리적 오류가 났을까?\" 곧바로 원인을 따져보고 수정한다.",
+                    B: "실수에 기분이 살짝 가라앉을 수 있지만, 잠시 마음을 정리한 뒤 다시 문제를 본다."
+                }
+            },
+            {
+                question: "어려운 문제 앞에서",
+                options: {
+                    A: "문제를 단계별로 분석하며 스스로 논리적으로 해결책을 찾으려 한다.",
+                    B: "주변 친구나 선생님에게 도움을 청하며, 함께 고민하는 과정을 선호한다."
+                }
+            },
+            {
+                question: "학습 목표 설정(새 학기 계획 세우기)",
+                options: {
+                    A: "\"이번 학기에 평균 몇 점 달성, 문제집 몇 쪽 완료\"처럼 구체적이고 실현 가능한 목표를 우선한다.",
+                    B: "\"이걸 잘하면 더욱 재미있어질 거야\"처럼 동기 부여와 의미 있는 목표를 중시한다."
+                }
+            },
+            {
+                question: "친구가 어려운 문제를 묻는 경우",
+                options: {
+                    A: "논리적이고 체계적으로 풀이 단계를 설명해준다.",
+                    B: "친구가 왜 어려워하는지 공감하고, 이해하기 쉬운 예시로 다정하게 도움을 준다."
+                }
+            },
+            {
+                question: "피드백 수용(선생님의 지도)",
+                options: {
+                    A: "\"여기를 이렇게 고치면 더 좋아\"처럼 솔직하고 직접적인 조언을 선호한다.",
+                    B: "\"참 잘했어. 이 부분을 조금만 수정하면 더 좋아질 것 같아\"처럼 부드럽고 배려 있는 표현을 더 편하게 느낀다."
+                }
+            },
+            {
+                question: "의견 충돌 상황(토론 중 의견 차이)",
+                options: {
+                    A: "자신의 의견을 논리적으로 펼치며 근거로 상대를 설득한다.",
+                    B: "상대방의 입장과 감정을 이해하고, 중간 지점을 찾으려 한다."
+                }
+            },
+            {
+                question: "결과 개선(점수 향상 전략)",
+                options: {
+                    A: "구체적으로 무엇이 문제였는지 논리적으로 분석하고 수정 방안을 찾는다.",
+                    B: "\"이번에는 긴장했으니 다음엔 마음을 편히 가지자\"처럼 동기와 분위기를 개선해 재도전한다."
+                }
+            }
+        ],
+        "J/P": [
+            // 기존 문항 그대로 삽입
+            {
+                question: "시험 준비(중간고사 대비)",
+                options: {
+                    A: "\"월·화: 국어 정리, 수: 수학 문제집 10쪽\" 식으로 구체적인 계획표를 세우고 엄격히 따른다.",
+                    B: "그날그날 컨디션과 필요에 따라 공부할 과목이나 분량을 융통성 있게 바꾼다."
+                }
+            },
+            {
+                question: "일정 변경(시간표 변경 상황)",
+                options: {
+                    A: "\"원래 계획대로 하는 게 편한데…\"라며 변화를 달가워하지 않는다.",
+                    B: "\"시간표가 바뀌었네? 그럼 이 시간엔 다른 과목을 하면 되겠군!\" 하고 바로 적응한다."
+                }
+            },
+            {
+                question: "과제 처리 방식(프로젝트 과제 완수)",
+                options: {
+                    A: "1단계-자료 수집, 2단계-정리, 3단계-작성 등 순서를 정하고 계획대로 착실히 진행한다.",
+                    B: "흥미 있는 부분부터 시작하고, 진행하면서 우선순위를 유연하게 조정한다."
+                }
+            },
+            {
+                question: "학습 환경(공부방 분위기)",
+                options: {
+                    A: "필요한 교재와 도구를 정해진 자리에 깔끔히 놓고, 질서정연한 환경을 선호한다.",
+                    B: "자유롭게 포스트잇을 붙이거나 책상을 재배치하며, 분위기 변화도 즐긴다."
+                }
+            },
+            {
+                question: "어려운 문제 접근(창의적 풀이 시도)",
+                options: {
+                    A: "배운 공식과 자료를 하나씩 적용해보며 체계적으로 문제를 해결한다.",
+                    B: "새로운 아이디어를 시도하면서 다양한 접근법을 모색한다."
+                }
+            },
+            {
+                question: "학습 계획 수립(장기 학습 계획)",
+                options: {
+                    A: "하루하루 구체적 일정(몇 페이지, 몇 분 공부)을 정하고 철저히 지킨다.",
+                    B: "대략적인 목표만 세우고, 필요에 따라 계획을 수정하며 유연하게 실행한다."
+                }
+            },
+            {
+                question: "결과 회고(프로젝트나 시험 이후)",
+                options: {
+                    A: "처음 세운 계획과 실제 진행 과정을 비교하며, 얼마나 계획대로 진행됐는지 점검한다.",
+                    B: "프로젝트나 시험을 통해 얻은 새로운 아이디어나 방법을 생각하며, 다음 기회에 개선할 여지를 찾는다."
+                }
+            }
+        ]
+    };
+
+    const sectionKeys = ["E/I", "S/N", "T/F", "J/P"];
+    const totalSections = sectionKeys.length;
+    const questionsPerSection = 7;
+    const totalQuestions = totalSections * questionsPerSection;
+
+    function startTest() {
+        document.getElementById("stage-intro").classList.remove("active");
+        document.getElementById("stage-test").classList.add("active");
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const section = sectionKeys[currentSectionIndex];
+        const questionObj = testData[section][currentQuestionIndex];
+
+        const questionContainer = document.getElementById("question-container");
+        questionContainer.innerHTML = `
+            <div class="question-card">
+                <div class="question-title">[${section}] 문항 ${currentQuestionIndex+1}/${questionsPerSection}</div>
+                <div class="question-text">${questionObj.question}</div>
+                <div class="options">
+                    <label class="option">
+                        <input type="radio" name="answer" value="A"> ${questionObj.options.A}
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="answer" value="B"> ${questionObj.options.B}
+                    </label>
+                </div>
+            </div>
+        `;
+
+        updateProgress();
+        updateNavButtons();
+    }
+
+    function updateProgress() {
+        const answeredCount =
+            (currentSectionIndex * questionsPerSection) + (currentQuestionIndex);
+        const progressPercent = (answeredCount / totalQuestions) * 100;
+        document.querySelector(".progress").style.width = progressPercent + "%";
+    }
+
+    function updateNavButtons() {
+        const prevBtn = document.querySelector(".nav-buttons button.btn-secondary");
+        const nextBtn = document.querySelector(".nav-buttons button.btn-primary:nth-child(2)");
+
+        if (currentSectionIndex === 0 && currentQuestionIndex === 0) {
+            prevBtn.disabled = true;
+        } else {
+            prevBtn.disabled = false;
+        }
+
+        if (currentSectionIndex === totalSections-1 && currentQuestionIndex === questionsPerSection-1) {
+            nextBtn.textContent = "결과 보기";
+        } else {
+            nextBtn.textContent = "다음";
+        }
+    }
+
+    function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+        } else if (currentSectionIndex > 0) {
+            currentSectionIndex--;
+            currentQuestionIndex = questionsPerSection - 1;
+        }
+        loadQuestion();
+    }
+
+    function nextQuestion() {
+        const checkedOption = document.querySelector('input[name="answer"]:checked');
+        if (!checkedOption) {
+            alert("답변을 선택해주세요.");
+            return;
+        }
+
+        const section = sectionKeys[currentSectionIndex];
+        answers[section][currentQuestionIndex] = checkedOption.value;
+
+        if (currentSectionIndex === totalSections-1 && currentQuestionIndex === questionsPerSection-1) {
+            showResults();
+            return;
+        }
+
+        if (currentQuestionIndex < questionsPerSection - 1) {
+            currentQuestionIndex++;
+        } else {
+            currentSectionIndex++;
+            currentQuestionIndex = 0;
+        }
+        loadQuestion();
+    }
+
+    function showResults() {
+        document.getElementById("stage-test").classList.remove("active");
+        document.getElementById("stage-results").classList.add("active");
+
+        const mbti = calculateMBTI();
+        const resultsContainer = document.getElementById("results-container");
+        const description = mbtiDescriptions[mbti];
+
+        resultsContainer.innerHTML = `
+            <div class="result-card">
+                <div class="result-title">결과: ${mbti}</div>
+                <p>자녀는 <strong>${mbti}</strong> 유형의 학습 성향을 보입니다.</p>
+                <div class="result-section">
+                    <h3>특징</h3>
+                    <p>${description.특징}</p>
+                </div>
+                <div class="result-section">
+                    <h3>학습 키워드</h3>
+                    <p>${description.학습키워드}</p>
+                </div>
+                <div class="result-section">
+                    <h3>학습 전략</h3>
+                    <p>${description.전략}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function calculateMBTI() {
+        let E_count = 0, I_count = 0;
+        let S_count = 0, N_count = 0;
+        let T_count = 0, F_count = 0;
+        let J_count = 0, P_count = 0;
+
+        answers["E/I"].forEach(a => {
+            if (a === "A") E_count++; else I_count++;
+        });
+
+        answers["S/N"].forEach(a => {
+            if (a === "A") S_count++; else N_count++;
+        });
+
+        answers["T/F"].forEach(a => {
+            if (a === "A") T_count++; else F_count++;
+        });
+
+        answers["J/P"].forEach(a => {
+            if (a === "A") J_count++; else P_count++;
+        });
+
+        const EI = E_count >= I_count ? "E" : "I";
+        const SN = S_count >= N_count ? "S" : "N";
+        const TF = T_count >= F_count ? "T" : "F";
+        const JP = J_count >= P_count ? "J" : "P";
+
+        return EI + SN + TF + JP;
+    }
+
+    function restartTest() {
+        currentSectionIndex = 0;
+        currentQuestionIndex = 0;
+        answers = {
+            "E/I": [],
+            "S/N": [],
+            "T/F": [],
+            "J/P": []
+        };
+        document.getElementById("stage-results").classList.remove("active");
+        document.getElementById("stage-intro").classList.add("active");
+    }
+    </script>
+</body>
+</html>
